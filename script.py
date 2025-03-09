@@ -1,5 +1,7 @@
 from bs4 import BeautifulSoup
-from requests_html import HTMLSession
+# from requests_html import HTMLSession
+
+print("test")
 
 url = "https://www.launchgood.com/v4/campaign/ali_riazs_reformation_charity_ramadan_campaign_2025?src=internal_discover"
 
