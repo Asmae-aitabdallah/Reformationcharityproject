@@ -1,37 +1,40 @@
-from bs4 import BeautifulSoup
-# from requests_html import HTMLSession
+from playwright.sync_api import sync_playwright
+import time
+import pandas as pd
 
-print("test")
+############## Initialise df ##################################################
+df = pd.read_csv("ramadan25_input.csv")
 
-url = "https://www.launchgood.com/v4/campaign/ali_riazs_reformation_charity_ramadan_campaign_2025?src=internal_discover"
+# df = pd.DataFrame(data)
+# Initialize the column with empty strings or None
+df['donation_raised'] = None
 
-def get_website_content():
-    session = HTMLSession()
-    try:
-        r = session.get(url)
-        r.html.render(sleep=2)
-        soup = BeautifulSoup(r.html.html, 'html.parser')
-        return soup
-    except Exception as e:
-        print("Error fetching the website:", e)
-        return None
+############ Scrape function ################################################
+def scrape_amount(input_url: str, full_name: str) -> str:
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)  # Headless by default
+        page = browser.new_page()
+        
+        url = input_url
+        page.goto(url)
 
-def get_div_content():
-    soup = get_website_content()
-    if soup:
-        div = soup.select_one("div.text-2xl.lg\\:text-5xl.lg\\:font-semibold.text-rebuild-primary.lg\\:mb-2.font-bold.me-1")
-        return div
-    return None
+        # 💤 Wait for the element to appear
+        amount_selector = "div.text-2xl.text-rebuild-primary.font-bold"
+        page.wait_for_selector(amount_selector, timeout=10000)
 
-def main():
-    div_content = get_div_content()
-    if div_content:
-        spans = div_content.find_all("span")
-        span_texts = [span.get_text(strip=True) for span in spans]
-        result_string = "".join(span_texts)
-        print("Resulting string:", result_string)
-    else:
-        print("The specified div was not found.")
+        # Optional: wait extra time for animation if needed
+        time.sleep(5)
 
-if __name__ == '__main__':
-    main()
+        # 💰 Grab the amount text
+        amount_text = page.locator(amount_selector).inner_text()
+        print(f"💰 Scraped Amount: {amount_text}")
+
+        browser.close()
+        return amount_text
+
+########### Run the scraper ############################################################
+for i in range(0, len(df)):
+    input_url = df['Fundraising link'][i]
+    full_name = df.loc[i, 'Name']
+    df['donation_raised'][i]=scrape_amount(input_url)
+    print('[LOGGING] Loading next url....')
