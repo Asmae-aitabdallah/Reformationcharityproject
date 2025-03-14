@@ -7,10 +7,10 @@ df = pd.read_csv("ramadan25_input.csv")
 
 # df = pd.DataFrame(data)
 # Initialize the column with empty strings or None
-df['donation_raised'] = None
+df.loc['donation_raised'] = None
 
 ############ Scrape function ################################################
-def scrape_amount(input_url: str, full_name: str) -> str:
+def scrape_amount(input_url: str) -> str:
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)  # Headless by default
         page = browser.new_page()
@@ -34,7 +34,9 @@ def scrape_amount(input_url: str, full_name: str) -> str:
 
 ########### Run the scraper ############################################################
 for i in range(0, len(df)):
-    input_url = df['Fundraising link'][i]
-    full_name = df.loc[i, 'Name']
-    df['donation_raised'][i]=scrape_amount(input_url)
+    input_url = df.loc[i, "Fundraising link"]
+    df.loc[i, 'donation raised']=scrape_amount(input_url)
     print('[LOGGING] Loading next url....')
+
+    # print ('[LOGGING] This is the final dataframe')
+    # print(df)
